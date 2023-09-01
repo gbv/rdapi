@@ -19,6 +19,9 @@
   </head>
   <body>
     <h1><%= title %></h1>
+    <p>
+      See <a href="https://github.com/gbv/rdapi#rdapi">technical documentation</a>!
+    </p>
     <h2>Supported formats</h2>
     <ul>
       <% for (let [key, format] of Object.entries(formats)) { %>
@@ -28,10 +31,9 @@
           <% } else { %>
             <code><%= key %></code>
           <% } %>
-          <% let type = format.type.match(/^application\/(xml|json)/)?.[1] %>
-          <% if (type) { %><%= `(${type.toUpperCase()})` %><% } %>
+          <% if (format.struct) { %><%= `(${format.struct.toUpperCase()})` %><% } %>
         </li>
       <% } %>
-    </ul>
+    </ul>    
   </body>
 </html>

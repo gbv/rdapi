@@ -7,9 +7,11 @@ const app = express()
 app.use(cors())
 app.set("json spaces", 2)
 
+// TODO: support POST request
 app.get("/:dbkey([a-zAZ0-9-]+):flags(!\\S+)?", async (req, res, next) => {
   const { dbkey, flags } = req.params
   const { ids, format, method, mailto, delim } = req.query
+  const { struct } = formats[format] || {}
 
   // validate query
   var message
@@ -23,9 +25,9 @@ app.get("/:dbkey([a-zAZ0-9-]+):flags(!\\S+)?", async (req, res, next) => {
     message = "Missing query parameter: format"
   } else if (!formats[format]) {
     message = `Unknown format: ${format}`
+  } else if (struct === "xml" && delim && !delim.match(/^[a-zA-Z_]+$/)) {
+    message = `Invalid XML root element name: ${delim}`
   }
-
-  // TODO: check valid XML root name for XML formats
   if (message) {
     const error = new Error(message)
     error.status = 400
@@ -38,11 +40,11 @@ app.get("/:dbkey([a-zAZ0-9-]+):flags(!\\S+)?", async (req, res, next) => {
   // TODO: add parameter to ignore errors
   await fetchRecords({ dbkey, flags, ppns, format })
     .then(records => {
-      const { type, data } = prepareResponse(records, formats[format].type, delim)
+      const { type, data } = prepareResponse(records, format, delim)
 
       // TODO: support specified method to deliver (download, email, print...)
 
-      if (type.match(/^application\/json/)) {
+      if (struct === "json") {
         res.json(data)
       } else {
         res.contentType(type)
@@ -52,19 +54,18 @@ app.get("/:dbkey([a-zAZ0-9-]+):flags(!\\S+)?", async (req, res, next) => {
     .catch(e => next(e))
 })
 
-// Configure view engine to render EJS templates.
+// info page on root
 app.set("views", "./views")
 app.set("view engine", "ejs")
-
-// info page on root
 app.get("/", (req, res) => {
   res.setHeader("Content-Type", "text/html")
   res.render("index", { title: "rdAPI prototype", formats })
 })
 
 
-function prepareResponse(data, type, delim) {
-  if (type.match(/^application\/json/)) {
+function prepareResponse(data, format, delim) {
+  const { type, struct } = formats[format]
+  if (struct == "json") {
     if (delim) {
       return {
         type: "application/x-ndjson",
@@ -73,10 +74,15 @@ function prepareResponse(data, type, delim) {
     } else {
       return { type, data }
     }
-  } else if (type.match(/^application\/xml/)) {
+  } else if (struct === "xml") {
     data = data.join("\n\n")
-    if (delim) { 
-      return { type, data: `<${delim}>${data}</${delim}>` }
+    if (delim) {     
+      data = data.replaceAll(/^<\?xml .+?>/mg,'') // remove XML header
+      return { type, data: ` <?xml version="1.0" ?>
+<${delim}>
+${data}
+</${delim}>` 
+      }
     } else {
       return { type: 'text/plain', data }
     }

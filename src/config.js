@@ -9,6 +9,9 @@ export const formats = await axios(`${unapiConfig}formats`).then(({data}) => {
   for (let key of Object.keys(data).filter(key => key.match(/\./))) {
     delete data[key]
   }
+  for (let key in data) {
+    data[key].struct = data[key].type?.match(/^application\/(xml|json)/)?.[1]
+  }
   console.log(`Configured with ${Object.keys(data).length} formats`)
   return data
 })
