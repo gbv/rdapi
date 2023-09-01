@@ -5,6 +5,10 @@ export const unapiConfig = "https://kxpapiwww.k10plus.de/unapi/"
 export const port = "7665"
 
 export const formats = await axios(`${unapiConfig}formats`).then(({data}) => {
+  // remove formats with . in its name => only for internal use
+  for (let key of Object.keys(data).filter(key => key.match(/\./))) {
+    delete data[key]
+  }
   console.log(`Configured with ${Object.keys(data).length} formats`)
   return data
 })

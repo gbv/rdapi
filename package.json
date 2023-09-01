@@ -4,7 +4,7 @@
   "description": "Prototype of record download API",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --watch --watch src server.js",
+    "dev": "nodemon --watch *.js --watch src",
     "start": "NODE_ENV=production node server.js",
     "test": "NODE_ENV=test mocha --exit"
   },
@@ -21,6 +21,7 @@
   "dependencies": {
     "axios": "^1.5.0",
     "cors": "^2.8.5",
+    "ejs": "^3.1.9",
     "express": "^4.18.2",
     "nodemon": "^3.0.1"
   }
