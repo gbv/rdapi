@@ -2,10 +2,12 @@
   "name": "rdapi",
   "version": "0.0.1",
   "description": "Prototype of record download API",
+  "main": "server.js",
   "type": "module",
   "scripts": {
     "dev": "nodemon --watch *.js --watch src",
     "start": "NODE_ENV=production node server.js",
+    "lint": "eslint --ignore-path .gitignore --fix server.js src test",
     "test": "NODE_ENV=test mocha --exit"
   },
   "repository": {
@@ -23,6 +25,14 @@
     "cors": "^2.8.5",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "portfinder": "^1.0.32"
+  },
+  "devDependencies": {
+    "chai": "^4.3.8",
+    "chai-http": "^4.4.0",
+    "eslint": "^8.48.0",
+    "eslint-config-gbv": "^1.0.5",
+    "mocha": "^10.2.0"
   }
 }

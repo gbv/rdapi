@@ -1,8 +1,24 @@
 import axios from "axios"
+import portfinder from "portfinder"
 
+export const env = process.env.NODE_ENV || "development"
 export const unAPI = "https://unapi.k10plus.de/"
 export const unapiConfig = "https://kxpapiwww.k10plus.de/unapi/"
-export const port = "7665"
+
+const getPort = async port => {
+  if (env == "test") {
+    portfinder.basePort = port
+    return portfinder.getPortPromise()
+  } else {
+    return port
+  }
+}
+export const port = await getPort("7665")
+
+
+
+// TODO
+
 
 export const formats = await axios(`${unapiConfig}formats`).then(({data}) => {
   // remove formats with . in its name => only for internal use

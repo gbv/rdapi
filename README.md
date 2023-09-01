@@ -8,9 +8,9 @@ There is an API endpoint for each database, with optional flags just like SRU (e
 
 - `format`: format id from unAPI
 - `ids`: list of PPNs, separated by any of spaces, newlines, comma, `|`
-- `method`: one of "print" (default) "download" and "email" (*not implemented yet*)
-- `mailto`: email address when method=email (*not implemented yet*)
-- `delim`: optional string to join records (empty line as default)
+- `download`: download result as given filename
+- `email`: optional email address to send result to (*not implemented yet*)
+- `delim`: optional string to join records (empty line as default) or additional XML root element name
 
 ## How does it work?
 
