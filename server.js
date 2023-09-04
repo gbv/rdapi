@@ -81,7 +81,7 @@ function prepareResponse(data, { format, sep }) {
     }
   } else if (struct === "xml") {
     data = data.join("\n\n")
-    data = data.replaceAll(/^<\?xml .+?>/mg,"") // remove XML header
+    data = data.replace(/^<\?xml .+?>/mg,"") // remove XML header
     // TODO: if .xml==0 then remove root element of reach record
     const root = formats[format].xml || "<records>"
     const end = root.match(/^<([^ >]+)/)[1]
