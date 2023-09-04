@@ -2,25 +2,17 @@ import axios from "axios"
 import portfinder from "portfinder"
 
 export const env = process.env.NODE_ENV || "development"
-export const unAPI = "https://unapi.k10plus.de/"
-export const unapiConfig = "https://kxpapiwww.k10plus.de/unapi/"
 
-const getPort = async port => {
-  if (env == "test") {
-    portfinder.basePort = port
-    return portfinder.getPortPromise()
-  } else {
-    return port
-  }
-}
-export const port = await getPort("7665")
+if (env !== "test") await import("dotenv/config")
+
+export const debug = process.env.DEBUG
+export const unAPI = process.env.UNAPI || "https://unapi.k10plus.de/"
+export const formatsURL = process.env.FORMATS || "https://kxpapiwww.k10plus.de/unapi/formats"
+export const port = env === "test" ?
+  await portfinder.getPortPromise() : process.env.PORT || "7665"
 
 
-
-// TODO
-
-
-export const formats = await axios(`${unapiConfig}formats`).then(({data}) => {
+export const formats = await axios(formatsURL).then(({data}) => {
   // remove formats with . in its name => only for internal use
   for (let key of Object.keys(data).filter(key => key.match(/\./))) {
     delete data[key]
@@ -31,3 +23,12 @@ export const formats = await axios(`${unapiConfig}formats`).then(({data}) => {
   console.log(`Configured with ${Object.keys(data).length} formats`)
   return data
 })
+
+import formatDetails from "../formats.js"
+for (let [key, format] of Object.entries(formatDetails)) {
+  if (formats[key]) {
+    Object.assign(formats[key], format)
+  } else {
+    console.error(`Format ${key} not supported by ${unAPI}`)
+  }
+}

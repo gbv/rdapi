@@ -6,26 +6,20 @@ import assert from "assert"
 import { app } from "../server.js"
 
 const errors = {
-  "/opac-de-627": { 
+  "/opac-de-627.xy": { 
     code: 400, message: "Missing query parameter: id", 
   },
-  "/opac-de-627!x": {
+  "/opac-de-627.xy!x": {
     code: 400, message: "Invalid flags: !x",
   },
-  "/opac-de-627?ids=123": {
-    code: 400, message: "Missing query parameter: format", 
-  },
-  "/opac-de-627?ids=123&format=xx": {
+  "/opac-de-627.xx?id=123": {
     code: 400, message: "Unknown format: xx",
   },
-  "/opac-de-627?ids=123&format=picaxml&delim=.": {
-    code: 400, message: "Invalid XML root element name: .",
+  "/opac-de-627.pp?id=123&download=1&email=a@b.c": {
+    code: 400, message: "Please provide at most one of download and email!",
   },
-  "/opac-de-627?ids=123&format=pp&download=1&email=a@b.c": {
-    code: 400, message: "Please provide at most one of download and email!"
-  },
-  "/opac-de-627?ids=123&format=pp&email=a@b.c": {
-    code: 400, message: "Email not implemented yet!"
+  "/opac-de-627.pp?id=123&email=a@b.c": {
+    code: 400, message: "Email not implemented yet!",
   },
 }
 

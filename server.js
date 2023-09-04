@@ -1,55 +1,63 @@
 import express from "express"
 import cors from "cors"
-import { port, formats } from "./src/config.js"
+import { port, formats, unAPI } from "./src/config.js"
 import { fetchRecords } from "./src/service.js"
 
 const app = express()
 app.use(cors())
 app.set("json spaces", 2)
 
-export const apiHandler = async (req, res, next) => {
-  const { dbkey, flags } = req.params
-  const { ids, format, download, email, delim } = req.query
-  const { struct } = formats[format] || {}
+// info page on root
+app.set("views", "./views")
+app.set("view engine", "ejs")
+app.get("/", (req, res) => res.render("index", { 
+  title: "rdAPI prototype", unAPI, formats, 
+}))
 
-  // validate query
+// TODO: add parameter to ignore errors for missing PPNs
+export const apiHandler = async (req, res, next) => {
+
+  // parse and validate query
+  const { dbkey } = req.params
+  const [ format, ...flags ] = req.params.format.split(/!/)
+  const { id, sep, download, email } = req.query
+
   var message
-  if (flags && !flags.match(/^(!xpn=(offline|online)|!levels=[012](,[012])*)+$/)) {
-    message = `Invalid flags: ${flags}`
-  } else if (!ids) {
+  var invalidFlags = flags.filter(f => !f.match(/^xpn=(offline|online)$|^levels=[012](,[012])*$/))
+  if (invalidFlags.length) {
+    message = `Invalid flags: !${invalidFlags.join("!")}`
+  } else if (!id) {
     message = "Missing query parameter: id"
-  } else if (!format) {
-    message = "Missing query parameter: format"
   } else if (!formats[format]) {
     message = `Unknown format: ${format}`
   } else if (download && email) {
     message = "Please provide at most one of download and email!"
   } else if (email) {
     message = "Email not implemented yet!"
-  } else if (struct === "xml" && delim && !delim.match(/^[a-zA-Z_]+$/)) {
-    message = `Invalid XML root element name: ${delim}`
   }
   if (message) {
     const error = new Error(message)
-    error.code = 400
+    error.status = 400
     return next(error)
   }
 
   // TODO: maximum number of PPNs?
-  const ppns = ids.split(/\n|\s|,|\|/).filter(id => id.match(/^[0-9]+[Xx]?$/))
+  const ppns = id.split(/\n|\s|,|\|/).filter(id => id.match(/^[0-9]+[Xx]?$/))
 
-  // TODO: add parameter to ignore errors for missing PPNs
-  await fetchRecords({ dbkey, flags, ppns, format })
-    .then(records => prepareResponse(records, format, delim))
+  const query = { dbkey, flags, ppns, format, sep, download, email }
+  await fetchRecords(query)
+    .then(records => prepareResponse(records, query))
     .then(({ type, data }) => {
+      const struct = formats[format].struct
       if (download) {
-        const filename = `${download}-${format}.${struct||"txt"}`
+        const filename = `${download}.${format}.${struct||"txt"}`
         res.set({"Content-Disposition":`attachment; filename="${filename}"`})
-        res.send(struct == "json" && !delim ? JSON.stringify(data) : data)
+        res.send(struct == "json" && !sep ? JSON.stringify(data) : data)
       } else if (struct === "json") {
         res.json(data)
       } else {
-        res.contentType(type)
+        // TODO: we might prefer text/plain for other than JSON and XML
+        res.contentType(type) 
         res.send(data)
       }
     })
@@ -57,22 +65,13 @@ export const apiHandler = async (req, res, next) => {
 }
 
 // api
-app.get("/:dbkey([a-zAZ0-9-]+):flags(!\\S*)?", apiHandler)
-app.post("/:dbkey([a-zAZ0-9-]+):flags(!\\S*)?", apiHandler)
+app.get ("/:dbkey([a-zAZ0-9-]+).:format", apiHandler)
+app.post("/:dbkey([a-zAZ0-9-]+).:format", apiHandler)
 
-// info page on root
-app.set("views", "./views")
-app.set("view engine", "ejs")
-app.get("/", (req, res) => {
-  res.setHeader("Content-Type", "text/html")
-  res.render("index", { title: "rdAPI prototype", formats })
-})
-
-
-function prepareResponse(data, format, delim) {
+function prepareResponse(data, { format, sep }) {
   const { type, struct } = formats[format]
   if (struct == "json") {
-    if (delim) {
+    if (sep) {
       return {
         type: "application/x-ndjson",
         data: data.map(record => JSON.stringify(record)).join("\n"),
@@ -82,25 +81,23 @@ function prepareResponse(data, format, delim) {
     }
   } else if (struct === "xml") {
     data = data.join("\n\n")
-    if (delim) {     
-      data = data.replaceAll(/^<\?xml .+?>/mg,"") // remove XML header
-      return { type, data: ` <?xml version="1.0" ?>
-<${delim}>
-${data}
-</${delim}>`, 
-      }
-    } else {
-      return { type: "text/plain", data }
+    data = data.replaceAll(/^<\?xml .+?>/mg,"") // remove XML header
+    // TODO: if .xml==0 then remove root element of reach record
+    const root = formats[format].xml || "<records>"
+    const end = root.match(/^<([^ >]+)/)[1]
+    return { 
+      type,
+      data: ["<?xml version=\"1.0\"?>",root,data,`</${end}>`].join("\n"),
     }
   } else {
-    return { type, data: data.join(delim || "\n\n") }
+    return { type, data: data.join(sep || "\n\n") }
   }
 }
 
 // error handling
 app.use((error, req, res, next) => // eslint-disable-line 
-  res.status(error.code || 500)
-    .json({ message: error.message, code: error.code || 500 }))
+  res.status(error.status || 500)
+    .json({ message: error.message, code: error.status || 500 }))
 
 // start the server
 app.listen(port, () => console.log(`Started rdAPI prototype at http://localhost:${port}/`))

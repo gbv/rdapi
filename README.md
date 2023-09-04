@@ -2,21 +2,33 @@
 
 > Prototype of record download API
 
+## Installation
+
+Clone from git and run `npm ci`.
+
+For deployment with pm2 copy `ecosystem.example.json` to `ecosystem.config.json` and run `pm2 install ecosystem.config.json`.
+
+## Configuration
+
+Environment variables and/or a local `.env` file can be used to configure:
+
+* `PORT` which port to under (default: 7665)
+* `UNAPI` unAPI endpoint to use (default: <https://unapi.k10plus.de/>)
+* `FORMATS` URL of a JSON file with an object of supported formats. Formats with dot in its name are removed (default: <https://kxpapiwww.k10plus.de/unapi/formats>)
+* `DEBUG` enable logging
+
+The local file `formats.js` further adds information about formats (this will likely be changed).
+
 ## API
 
-There is an API endpoint for each database, with optional flags just like SRU (e.g. `/opac-de-627`, `/opac-de-627!levels=0` ...). A GET or POST request is expected to provide the following parameters:
+There is an API endpoint for each database, with optional flags just like SRU (e.g. `/opac-de-627`, `/opac-de-627!levels=0` ...) followed by a dot and a format id from unAPI. A GET or POST request is expected to provide the following parameters:
 
-- `format`: format id from unAPI
-- `ids`: list of PPNs, separated by any of spaces, newlines, comma, `|`
+- `id`: list of PPNs, separated by any of spaces, newlines, comma, `|`
 - `download`: download result as given filename
+- `sep`: optional string to join records (empty line as default). Treated as boolean for JSON-based formats to return newline-delimited JSON instead of JSON array
 - `email`: optional email address to send result to (*not implemented yet*)
-- `delim`: optional string to join records (empty line as default) or additional XML root element name
 
-## How does it work?
+## Client
 
-1. fetch all records via/like unAPI
-2. Depending on format type:
+An info page with a demo client in JavaScript is shown at the server root.
 
-   - if format type is `application/json`: concatenate with newline if record delimiter set or wrap as JSON array (otherwise)
-   - if format type is `application/xml`: concatenate with newlines or use specified record separator as new XML root element to combine XML
-   - if format type is `text/plain` or other: concatenate with record delimiter

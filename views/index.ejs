@@ -15,25 +15,90 @@
     a:hover, a:active {
       text-decoration: underline;
     }
+    #rdapi-download-form {
+      padding: 0em 0.5em;
+      border: 1px solid #666;      
+      box-shadow: 8px 8px 4px #666;
+    }
     </style>
   </head>
   <body>
     <h1><%= title %></h1>
     <p>
+      Download selected records from 
+      <a href="<%= unAPI %>"><%= unAPI %></a>.
+    </p>
       See <a href="https://github.com/gbv/rdapi#rdapi">technical documentation</a>!
     </p>
+    <h2>Client Demo</h2>
+    <div id="rdapi-download-form"></div>
     <h2>Supported formats</h2>
-    <ul>
+    <table>
       <% for (let [key, format] of Object.entries(formats)) { %>
-        <li>
+        <tr>
+          <td>
           <% if (format.docs) { %>
             <a href="<%= format.docs %>"><code><%= key %></code></a>
           <% } else { %>
             <code><%= key %></code>
           <% } %>
-          <% if (format.struct) { %><%= `(${format.struct.toUpperCase()})` %><% } %>
-        </li>
+          </td>
+          <td>
+            <%= format.struct?.toUpperCase() %>
+          </td>
+          <td>
+            <%= [format?.title?.en, format?.title?.de].filter(Boolean).join(" = ") %>
+          </td>
+          <td>
+          </td>
+        </tr>
       <% } %>
-    </ul>    
+    </table>
   </body>
 </html>
+<script type="text/javascript">
+const formats = <%- JSON.stringify(formats) %>
+
+// TODO: configurable
+const clientFormats = ['mads','bibtex','endnote','ris','marc21','pp','rdfxml']
+const root = document.getElementById('rdapi-download-form')
+function submitDownload(mode,form) {
+  const dbkey = "opac-de-627" // TODO: configurable
+  const id = form.ppns.value
+  // TODO: optionally set flags
+  const url = `/${dbkey}.${form.format.value}?`
+  const query = { id: form.ppns.value }
+  if (mode === "download") {
+    query.download = "download" // this should be configurable
+    window.open(url + new URLSearchParams(query))
+  } else if (mode === "email") {
+    alert(`${mode} not implemented yet!`)
+  } else {
+    window.location.href = url + new URLSearchParams(query)
+  }
+}
+if (root) {  
+  const formatOptions = clientFormats
+    .filter(id => formats[id])
+    .map(id => `<option value="${id}">${formats[id]?.title?.en||id}</option>`).join("\n")
+  root.innerHTML = `
+<form onSubmit="event.preventDefault()">
+  <p>
+    <label for="ppns">PPNs</label>
+    <input type="text" id="ppns"/>
+  </p>
+  <p>
+    <label for="format">format</label>
+    <select id="format">
+     ${formatOptions}
+    </select>
+  </p>
+  <p>
+    <button onClick="submitDownload('download',this.form)">save</button>
+    <button onClick="submitDownload('show',this.form)">show</button>
+    <button onClick="submitDownload('email',this.form)" disabled>email</button>
+  </p>
+</form>
+`
+}
+</script>
