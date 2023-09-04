@@ -31,6 +31,6 @@ export default {
       de: "RDF",
       en: "RDF",
     },
-    xml: 0 // TODO: use root of first and strip
+    xml: '*'
   }
 }

@@ -3,8 +3,8 @@ import { unAPI, debug } from "./config.js"
 
 // expects valid PPN ids and known format
 export const fetchRecords = async ({ dbkey, flags, ppns, format }) => Promise.all(ppns.map(ppn => {
-  flags = flags ? flags.map(f => "!"+f.replaceAll("=","%3D")).join("") : ""
-  const url = `${unAPI}?id=${dbkey}${flags}:ppn:${ppn}&format=${format}`
+  const allFlags = flags ? flags.map(f => "!"+f.replaceAll("=","%3D")).join("") : ""
+  const url = `${unAPI}?id=${dbkey}${allFlags}:ppn:${ppn}&format=${format}`
   if (debug) {
     console.log(url)
   }

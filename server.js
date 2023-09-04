@@ -80,11 +80,17 @@ function prepareResponse(data, { format, sep }) {
       return { type, data }
     }
   } else if (struct === "xml") {
+    data = data.map(xml => xml.replace(/^<\?xml .+?>/m,"")) // remove XML header
+    var root = formats[format].xml
+    if (root === "*") {    
+      // use root element of first record
+      const startTag = /<[a-zA-Z_][^>]*>/m
+      root = (data[0] || "<records>").match(startTag)[0]
+      data = data.map(xml => xml.replace(startTag,"").replace(/<\/[^>]+>\s*$/g,""))
+    }
     data = data.join("\n\n")
-    data = data.replace(/^<\?xml .+?>/mg,"") // remove XML header
-    // TODO: if .xml==0 then remove root element of reach record
-    const root = formats[format].xml || "<records>"
-    const end = root.match(/^<([^ >]+)/)[1]
+    root = root || "<records>"
+    const end = root.match(/^<([^\s>]+)/)[1]
     return { 
       type,
       data: ["<?xml version=\"1.0\"?>",root,data,`</${end}>`].join("\n"),
