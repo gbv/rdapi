@@ -16,6 +16,8 @@ Environment variables and/or a local `.env` file can be used to configure:
 * `UNAPI` unAPI endpoint to use (default: <https://unapi.k10plus.de/>)
 * `FORMATS` URL of a JSON file with an object of supported formats. Formats with dot in its name are removed (default: <https://kxpapiwww.k10plus.de/unapi/formats>)
 * `DEBUG` enable logging
+* `SMTP` SMTP connection in the form `username@host` or `username@host:port` to support sending records by email
+* `PASS` Corresponding email password
 
 The local file `formats.js` further adds information about formats (this will likely be changed).
 
@@ -26,7 +28,7 @@ There is an API endpoint for each database, with optional flags just like SRU (e
 - `id`: list of PPNs, separated by any of spaces, newlines, comma, `|`
 - `download`: download result as given filename
 - `sep`: optional string to join records (empty line as default). Treated as boolean for JSON-based formats to return newline-delimited JSON instead of JSON array
-- `email`: optional email address to send result to (*not implemented yet*)
+- `email`: optional email address to send result to (*not fully implemented yet*)
 
 ## Client
 

@@ -1,6 +1,6 @@
 import express from "express"
 import cors from "cors"
-import { port, formats, unAPI } from "./src/config.js"
+import { port, formats, mailer, debug, unAPI } from "./src/config.js"
 import { fetchRecords } from "./src/service.js"
 
 const app = express()
@@ -32,8 +32,10 @@ export const apiHandler = async (req, res, next) => {
     message = `Unknown format: ${format}`
   } else if (download && email) {
     message = "Please provide at most one of download and email!"
-  } else if (email) {
-    message = "Email not implemented yet!"
+  } else if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    message = "Invalid email address"
+  } else if (email && !mailer) {
+    message = "Sending records by email has not been enabled!"
   }
   if (message) {
     const error = new Error(message)
@@ -46,21 +48,7 @@ export const apiHandler = async (req, res, next) => {
 
   const query = { dbkey, flags, ppns, format, sep, download, email }
   await fetchRecords(query)
-    .then(records => prepareResponse(records, query))
-    .then(({ type, data }) => {
-      const struct = formats[format].struct
-      if (download) {
-        const filename = `${download}.${format}.${struct||"txt"}`
-        res.set({"Content-Disposition":`attachment; filename="${filename}"`})
-        res.send(struct == "json" && !sep ? JSON.stringify(data) : data)
-      } else if (struct === "json") {
-        res.json(data)
-      } else {
-        // TODO: we might prefer text/plain for other than JSON and XML
-        res.contentType(type) 
-        res.send(data)
-      }
-    })
+    .then(records => sendRecords(query, records, res))
     .catch(e => next(e))
 }
 
@@ -98,6 +86,42 @@ function prepareResponse(data, { format, sep }) {
   } else {
     return { type, data: data.join(sep || "\n\n") }
   }
+}
+
+async function sendRecords(query, records, res) {
+  const { type, data } = await prepareResponse(records, query)
+  
+  const { format, sep, download, email } = query
+  const struct = formats[format].struct
+
+  if (download) {
+    const filename = `${download}.${format}.${struct||"txt"}`
+    res.set({"Content-Disposition":`attachment; filename="${filename}"`})
+    res.send(struct == "json" && !sep ? JSON.stringify(data) : data)
+  } else if (email) {
+    // TODO: if (!records.length) don't send empty mail
+    res.status(202)
+    // TODO: use attachement for JSON/XML
+    const info = await mailer.sendMail({
+      from: "from@example.org",
+      to: email, // TODO: validate mail address
+      subject: "Records download", // TODO: customize subject line
+      text: struct == "json" && !sep ? JSON.stringify(data) : data
+    })
+    if (debug) {
+      console.log(info)
+    }
+    res.json({
+      message: `An email has been sent with ${records.length} records`,
+    })
+  } else if (struct === "json") {
+    res.json(data)
+  } else {
+    // TODO: we might prefer text/plain for other than JSON and XML
+    res.contentType(type) 
+    res.send(data)
+  }
+
 }
 
 // error handling

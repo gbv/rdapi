@@ -18,8 +18,11 @@ const errors = {
   "/opac-de-627.pp?id=123&download=1&email=a@b.c": {
     code: 400, message: "Please provide at most one of download and email!",
   },
+  "/opac-de-627.pp?id=123&email=?": {
+    code: 400, message: "Invalid email address",
+  },
   "/opac-de-627.pp?id=123&email=a@b.c": {
-    code: 400, message: "Email not implemented yet!",
+    code: 400, message: "Sending records by email has not been enabled!",
   },
 }
 
