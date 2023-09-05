@@ -29,8 +29,7 @@ export const mailer = (({SMTP,PASS}) => {
 })(process.env)
 
 export const formats = await axios(formatsURL).then(({data}) => {
-  // remove formats with . in its name => only for internal use
-  for (let key of Object.keys(data).filter(key => key.match(/\./))) {
+  for (let key of Object.keys(data).filter(key => !key.match(/^[a-z][a-z0-9-]*$/))) {
     delete data[key]
   }
   for (let key in data) {

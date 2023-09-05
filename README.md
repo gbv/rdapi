@@ -23,14 +23,21 @@ The local file `formats.js` further adds information about formats (this will li
 
 ## API
 
-There is an API endpoint for each database, with optional flags just like SRU (e.g. `/opac-de-627`, `/opac-de-627!levels=0` ...) followed by a dot and a format id from unAPI. A GET or POST request is expected to provide the following parameters:
+### GET /
 
-- `id`: list of PPNs, separated by any of spaces, newlines, comma, `|`
+An info page with a demo client in JavaScript is shown at the server root.
+
+### GET /{database}{flags}.{format}
+
+Download records from `database` modified with optional `flags` in `format`. Examples:
+
+- `/opac-de-627.marc21`
+- `/opac-de-627!levels=0!xpn=online.pp`
+
+Query parameters:
+
+- `id`: required list of PPNs, separated by any of spaces, newlines, comma, `|`
 - `download`: download result as given filename
 - `sep`: optional string to join records (empty line as default). Treated as boolean for JSON-based formats to return newline-delimited JSON instead of JSON array
 - `email`: optional email address to send result to (*not fully implemented yet*)
-
-## Client
-
-An info page with a demo client in JavaScript is shown at the server root.
 

@@ -9,7 +9,7 @@ const errors = {
   "/opac-de-627.xy": { 
     code: 400, message: "Missing query parameter: id", 
   },
-  "/opac-de-627.xy!x": {
+  "/opac-de-627!x.xy": {
     code: 400, message: "Invalid flags: !x",
   },
   "/opac-de-627.xx?id=123": {

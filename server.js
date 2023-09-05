@@ -14,12 +14,16 @@ app.get("/", (req, res) => res.render("index", {
   title: "rdAPI prototype", unAPI, formats, 
 }))
 
-// TODO: add parameter to ignore errors for missing PPNs
-export const apiHandler = async (req, res, next) => {
+// api
+app.get ("/:dbkey([a-zAZ0-9-]+).:format", apiRoute)
+app.post("/:dbkey([a-zAZ0-9-]+).:format", apiRoute)
+app.get ("/:dbkey([a-zAZ0-9-]+)!:flags.:format", apiRoute)
+app.post("/:dbkey([a-zAZ0-9-]+)!:flags.:format", apiRoute)
 
-  // parse and validate query
-  const { dbkey } = req.params
-  const [ format, ...flags ] = req.params.format.split(/!/)
+async function apiRoute(req, res, next) {
+
+  const { dbkey, format } = req.params
+  const flags = req.params.flags ? req.params.flags.split('!') : []
   const { id, sep, download, email } = req.query
 
   var message
@@ -44,6 +48,7 @@ export const apiHandler = async (req, res, next) => {
   }
 
   // TODO: maximum number of PPNs?
+  // TODO: error on invalid PPNs?
   const ppns = id.split(/\n|\s|,|\|/).filter(id => id.match(/^[0-9]+[Xx]?$/))
 
   const query = { dbkey, flags, ppns, format, sep, download, email }
@@ -51,10 +56,6 @@ export const apiHandler = async (req, res, next) => {
     .then(records => sendRecords(query, records, res))
     .catch(e => next(e))
 }
-
-// api
-app.get ("/:dbkey([a-zAZ0-9-]+).:format", apiHandler)
-app.post("/:dbkey([a-zAZ0-9-]+).:format", apiHandler)
 
 function prepareResponse(data, { format, sep }) {
   const { type, struct } = formats[format]
